@@ -28,6 +28,8 @@ local ASSRT_DETAIL_API = (o.use_https and "https" or "http") .. "://api.assrt.ne
 
 local TEMP_DIR = os.getenv("TEMP") or "/tmp"
 
+local pos = 0
+
 local function is_protocol(path)
     return type(path) == 'string' and (path:find('^%a[%w.+-]-://') ~= nil or path:find('^%a[%w.+-]-:%?') ~= nil)
 end
@@ -366,7 +368,8 @@ local function fetch_subtitle_details(sub_id)
     end
 end
 
-local function search_subtitles(query)
+local function search_subtitles(pos, query)
+    local pos = tonumber(pos)
     local message = "正在搜索字幕..."
     if uosc_available then
         local menu_props = {
@@ -375,7 +378,12 @@ local function search_subtitles(query)
             search_style = "palette",
             search_debounce = "submit",
             search_suggestion = query,
-            on_search = { "script-message-to", mp.get_script_name(), "search-subtitles-event" },
+            on_search = {
+                "script-message-to",
+                mp.get_script_name(),
+                "search-subtitles-event",
+                tostring(pos),
+            },
             footnote = "使用enter或ctrl+enter进行搜索",
             items = {
                 {
@@ -389,12 +397,12 @@ local function search_subtitles(query)
             },
         }
         local json_props = utils.format_json(menu_props)
-        mp.commandv("script-message-to", "uosc", "update-menu", json_props)
+        mp.commandv("script-message-to", "uosc", "open-menu", json_props)
     else
         mp.osd_message(message)
     end
 
-    local url = ASSRT_SEARCH_API .. "?token=" .. o.api_token .. "&q=" .. url_encode(query) .. "&no_muxer=1"
+    local url = ASSRT_SEARCH_API .. "?token=" .. o.api_token .. "&q=" .. url_encode(query) .. "&no_muxer=1&pos=" .. pos
     local res = http_request(url)
     if not res or res.status ~= 0 then
         if uosc_available then
@@ -428,6 +436,22 @@ local function search_subtitles(query)
                 "fetch-details-event",
                 sub.id,
             },
+        })
+    end
+
+    if #items == 15 then
+        pos = pos + 15
+        table.insert(items, {
+            title = "加载下一页",
+            value = {
+                "script-message-to",
+                mp.get_script_name(),
+                "search-subtitles-event",
+                tostring(pos), query,
+            },
+            italic = true,
+            bold = true,
+            align = "center",
         })
     end
 
@@ -465,7 +489,7 @@ function open_menu_select(menu_items)
     })
 end
 
-function open_input_menu_get(query)
+function open_input_menu_get(pos, query)
     mp.commandv('script-message-to', 'console', 'disable')
     input.get({
         prompt = '搜索字幕:',
@@ -473,19 +497,24 @@ function open_input_menu_get(query)
         cursor_position = query and #query + 1,
         submit = function(text)
             input.terminate()
-            search_subtitles(text)
+            search_subtitles(pos, text)
         end
     })
 end
 
-function open_input_menu_uosc(query)
+function open_input_menu_uosc(pos, query)
     local menu_props = {
         type = "menu_subtitle",
         title = "输入搜索内容",
         search_style = "palette",
         search_debounce = "submit",
         search_suggestion = query,
-        on_search = { "script-message-to", mp.get_script_name(), "search-subtitles-event" },
+        on_search = {
+            "script-message-to",
+            mp.get_script_name(),
+            "search-subtitles-event",
+            tostring(pos),
+        },
         footnote = "使用enter或ctrl+enter进行搜索",
         items = {},
     }
@@ -500,11 +529,12 @@ local function sub_assrt()
         return
     end
 
+    pos = 0
     local query = get_title(path)
     if uosc_available then
-        open_input_menu_uosc(query)
+        open_input_menu_uosc(pos, query)
     elseif input_loaded then
-        open_input_menu_get(query)
+        open_input_menu_get(pos, query)
     end
 end
 
@@ -512,21 +542,21 @@ mp.register_script_message('uosc-version', function()
     uosc_available = true
 end)
 
-mp.register_script_message("search-subtitles-event", function(query)
+mp.register_script_message("search-subtitles-event", function(pos, query)
     if uosc_available then
-        mp.commandv("script-message-to", "uosc", "update-menu", "menu_subtitle")
+        mp.commandv("script-message-to", "uosc", "open-menu", "menu_subtitle")
     end
-    search_subtitles(query)
+    search_subtitles(pos, query)
 end)
 mp.register_script_message("fetch-details-event", function(query)
     if uosc_available then
-        mp.commandv("script-message-to", "uosc", "update-menu", "subtitle_details")
+        mp.commandv("script-message-to", "uosc", "open-menu", "subtitle_details")
     end
     fetch_subtitle_details(query)
 end)
 mp.register_script_message("download-file-event", function(url, filename)
     if uosc_available then
-        mp.commandv("script-message-to", "uosc", "update-menu", "download_subtitle")
+        mp.commandv("script-message-to", "uosc", "open-menu", "download_subtitle")
     end
     download_file(url, filename)
 end)
