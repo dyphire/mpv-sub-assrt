@@ -123,6 +123,17 @@ local function file_exists(path)
     return false
 end
 
+local function alphanumsort(a, b)
+    -- alphanum sorting for humans in Lua
+    -- http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
+    local function padnum(d)
+        local dec, n = string.match(d, "(%.?)0*(.+)")
+        return #dec > 0 and ("%.12f"):format(d) or ("%s%03d%s"):format(dec, #n, n)
+    end
+    return tostring(a):lower():gsub("%.?%d+", padnum) .. ("%3d"):format(#b)
+         < tostring(b):lower():gsub("%.?%d+", padnum) .. ("%3d"):format(#a)
+end
+
 local function normalize(path)
     if normalize_path ~= nil then
         if normalize_path then
@@ -361,6 +372,12 @@ local function fetch_subtitle_details(sub_id)
                 sub.url, sub.f,
             },
         })
+    end
+
+    if #items > 1 then
+        table.sort(items, function(a, b)
+            return alphanumsort(a.title, b.title)
+        end)
     end
 
     if #items == 0 and subs.url and not is_compressed_file(subs.filename) then
