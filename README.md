@@ -16,5 +16,8 @@
 key  script-message-to  sub_assrt sub-assrt
 ```
 
+## 鸣谢
+
+- [mpv-assrt](https://github.com/AssrtOSS/mpv-assrt)
 
 
