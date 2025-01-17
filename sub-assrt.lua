@@ -601,6 +601,8 @@ end
 
 mp.register_script_message('uosc-version', function()
     uosc_available = true
+    mp.commandv('script-message-to', 'uosc', 'overwrite-binding', 'download-subtitles',
+    'script-message-to  sub_assrt sub-assrt')
 end)
 
 mp.register_script_message("search-subtitles-event", function(pos, query)
