@@ -71,6 +71,26 @@ local function split(str, delim)
     return result
 end
 
+local function is_compressed_file(filename)
+    local ext_map = {
+        zip = true,
+        rar = true,
+        ["7z"] = true,
+        gz = true,
+        tar = true,
+        bz2 = true,
+        xz = true,
+        tgz = true,
+        tbz2 = true,
+    }
+
+    local ext = filename:match("%.([%w]+)$"):lower()
+    if ext then
+        return ext_map[ext] or false
+    end
+    return false
+end
+
 local function http_request(url)
     local cmd = {
         "curl",
@@ -249,7 +269,7 @@ end
 local function download_file(url, fname)
     local path = mp.get_property("path")
     local filename = mp.get_property("filename/no-ext")
-    local ext = fname:match('%.([^%.]+)$')
+    local ext = fname:match('%.([^%.]+)$'):lower()
 
     if is_protocol(path) then
         sub_path = utils.join_path(TEMP_DIR, fname)
@@ -280,7 +300,7 @@ local function download_file(url, fname)
     else
         mp.osd_message(message)
     end
-    
+
     local cmd = {"curl", "-s", "--user-agent", "mpv", "-o", sub_path, url}
     if o.proxy ~= "" then
         table.insert(cmd, '-x')
@@ -337,7 +357,8 @@ local function fetch_subtitle_details(sub_id)
     end
 
     local items = {}
-    for _, sub in ipairs(res.sub.subs[1].filelist) do
+    local subs = res.sub.subs[1]
+    for _, sub in ipairs(subs.filelist) do
         table.insert(items, {
             title = sub.f,
             hint = sub.s,
@@ -346,6 +367,21 @@ local function fetch_subtitle_details(sub_id)
                 mp.get_script_name(),
                 "download-file-event",
                 sub.url, sub.f,
+            },
+        })
+    end
+
+    if #items == 0 and subs.url and not is_compressed_file(subs.filename) then
+        local size= subs.size / 1024
+        local sub_size = size > 1024 and string.format("%.2fMB", size / 1024) or string.format("%.2fKB", size)
+        table.insert(items, {
+            title = subs.filename,
+            hint = sub_size,
+            value = {
+                "script-message-to",
+                mp.get_script_name(),
+                "download-file-event",
+                subs.url,  subs.filename,
             },
         })
     end
