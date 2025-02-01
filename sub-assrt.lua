@@ -596,7 +596,7 @@ function update_menu_uosc(type, title, text, footnote, cmd, query)
         type = type,
         title = title,
         search_style = cmd and "palette" or "on_demand",
-        search_debounce = "submit",
+        search_debounce = cmd and "submit" or 0,
         on_search = cmd,
         footnote = footnote,
         search_suggestion = query,
