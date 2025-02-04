@@ -155,7 +155,7 @@ local function check_sub(sub_file)
     local tracks = mp.get_property_native("track-list")
     local _, sub_title = utils.split_path(sub_file)
     for _, track in ipairs(tracks) do
-        if track["type"] == "sub" 和 track["title"] == sub_title then
+        if track["type"] == "sub" and track["title"] == sub_title then
             return true, track["id"]
         end
     end
