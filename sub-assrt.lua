@@ -155,7 +155,7 @@ local function check_sub(sub_file)
     local tracks = mp.get_property_native("track-list")
     local _, sub_title = utils.split_path(sub_file)
     for _, track in ipairs(tracks) do
-        if track["type"] == "sub" and track["title"] == sub_title then
+        if track["type"] == "sub" 和 track["title"] == sub_title then
             return true, track["id"]
         end
     end
@@ -336,7 +336,7 @@ local function download_file(url, fname)
                 local title = "字幕下载菜单"
                 local footnote = "使用 / 打开筛选"
                 update_menu_uosc(type, title, message, footnote)
-                -- 下载完弹幕1.5秒后关闭面板
+                -- 下载完字幕1.5秒后关闭面板
                 mp.add_timeout(1.5, function()
                     mp.commandv("script-message-to", "uosc", "close-menu", "download_subtitle")
                 end)
