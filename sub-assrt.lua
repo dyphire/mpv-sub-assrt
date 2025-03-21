@@ -495,10 +495,10 @@ local function search_subtitles(pos, query)
 
         for _, sub in ipairs(subs) do
             table.insert(items, {
-                title = sub.video_chinese_name ~= '' and sub.video_chinese_name
-                    or sub.native_name ~= '' and sub.native_name or sub.videoname,
+                title = sub.video_chinese_name and sub.video_chinese_name ~= '' and sub.video_chinese_name
+                    or sub.native_name and sub.native_name ~= '' and sub.native_name or sub.videoname,
                 hint = sub.lang and sub.lang.desc ~= '' and sub.lang.desc
-                    or sub.m_lang ~= '' and sub.m_lang:gsub("&nbsp;", " "),
+                    or sub.m_lang and sub.m_lang ~= '' and sub.m_lang:gsub("&nbsp;", " "),
                 value = {
                     "script-message-to",
                     mp.get_script_name(),
